@@ -8,33 +8,50 @@ from selenium.webdriver.common.by import By
 from hometeachingLocators import DistrictLocators as DL, SignInLocators as SL
 from hometeaching import District, Hometeacher, Hometeachee, Companionship
 from urls import URLS
+import datetime as dt
 import unicodedata
 import platform
 import datetime
 import csv
 
+
 class HometeachingScraper:
-    def __init__(self, email, pass_word, current_month, csv_folder='csvs/', ):
+
+    months = {1: ('January', 'Jan'),
+              2: ('February', 'Feb'),
+              3: ('March', 'Mar'),
+              4: ('April', 'Apr'),
+              5: ('May', 'May'),
+              6: ('June', 'Jun'),
+              7: ('July', 'Jul'),
+              8: ('August', 'Aug'),
+              9: ('September', 'Sept'),
+              10: ('October', 'Oct'),
+              11: ('November', 'Nov'),
+              12: ('December', 'Dec')
+              }
+
+    def __init__(self, email, pass_word, csv_folder='csvs/'):
+        date = dt.datetime.now()
         self.driver = None
         self.wait = None
-        self.current_month = current_month
+        self.current_month = str(date.month)
+        self.current_year = str(date.year)
+        self.current_day = str(date.day)
         self.email = email
         self.pass_word = pass_word
         self.csv_folder = csv_folder
-        self.csv_headers = [
-                        'District Leader',
-                        'Date',
-                        'Companionship'
-        ]
-        self.csv_file = open(self.csv_folder + self.get_csv_name(), 'wb')
-        self.writer = csv.writer(self.csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-        self.write_row(self.csv_headers)
         self.scrape_started = False
         self.scrape_finished = False
         self.districts = []
 
-    def get_csv_name(self):
-        csv_name = 'hometeaching_' + self.current_month
+    def get_csv_name(self, purpose=None):
+        csv_name = 'hometeaching' + \
+                   + '-' + self.current_month \
+                   + '-' + self.current_day \
+                   + '-' + self.current_year
+        if purpose is not None:
+            csv_name += '-' + purpose
         return csv_name
 
     def open_browser(self):
@@ -45,13 +62,22 @@ class HometeachingScraper:
     def close(self):
         self.driver.quit()
         self.csv_file.close()
+
     def scrape(self):
+        try:
+            element = WebDriverWait(self.driver, 100).until(
+                EC.presence_of_element_located(DL.DISTRICTS))
+        finally:
+            pass
+
         districts_len = self.driver.find_elements(*DL.DISTRICTS)
-        #Add the district leaders to the districts
-        for i in range(1, len(districts_len)+1):
-            district_leader = self.driver.find_element(*(By.XPATH, '//*[@id="organizeList"]/accordion/div/div[' + str(i) + ']/div[2]/div/div[1]/a')).text
+        # print(districts_len)
+        # Add the district leaders to the districts
+        for i in range(1, len(districts_len) + 1):
+            district_leader = self.driver.find_element(
+                *(By.XPATH, '//*[@id="organizeList"]/accordion/div/div[' + str(i) + ']/div[2]/div/div[1]/a')).text
             self.districts.append(District(district_leader=district_leader))
-        #Look for the companionships within the district and add all that information to the district
+        # Look for the companionships within the district and add all that information to the district
         for i in range(len(districts_len)):
             companionships = districts_len[i].find_elements(*DL.COMPANIONSHIP)
             companionships = companionships[1:]
@@ -66,7 +92,7 @@ class HometeachingScraper:
                 for k in range(0, len(comp_names), 2):
                     # take off the trailing comma
                     comp_names[k] = comp_names[k][:-1]
-                    f_name = comp_names[k+1]
+                    f_name = comp_names[k + 1]
                     l_name = comp_names[k]
                     hometeacher = Hometeacher(f_name, l_name)
                     comp.companions.append(hometeacher)
@@ -82,6 +108,49 @@ class HometeachingScraper:
     def print_data(self):
         for district in self.districts:
             print(district.to_string())
+
+    def by_district_to_csv(self):
+
+        csv_headers = [
+            'District Leader',
+            'Companionship',
+            'Assignment',
+            'Home taught',
+            'Hometeaching Percentage'
+        ]
+        months = [self.months[i][1] for i in range(1, 13)]
+        csv_headers.extend(months)
+
+        with open(self.csv_folder + self.get_csv_name('by_district'), 'wb') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+            self.write_row(writer, csv_file, csv_headers)
+            for district in self.districts:
+                self.write_row(writer, csv_file, [district.district_leader])
+                for companionship in district.companionships:
+                    for companion in companionship.companions:
+                        self.write_row(writer, csv_file, ['\t', companion.get_name()])
+                    for hometeachee in companionship.hometeachees:
+                        self.write_row(writer, csv_file,
+                                       ['\t', '\t', hometeachee.get_name()])  # TODO: ADD in hometeaching here
+
+    def companionships_to_csv(self):
+        csv_headers = [
+            'Companionship',
+            'Assignment',
+            'Hometeaching Percentage'
+
+        ]
+
+        with open(self.csv_folder + self.get_csv_name('companionships'), 'wb') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+            for district in self.districts:
+                for companionship in district.companionships:
+                    for companion in companionship.companions:
+                        self.write_row(writer, csv_file, [companion.get_name()])
+                    for hometeachee in companionship.hometeachees:
+                        self.write_row(writer, csv_file,
+                                       ['\t', hometeachee.get_name()])  # TODO: ADD in hometeaching here
+
     def asciify(self, row):
         try:
             return [unicodedata.normalize('NFKD', datum).encode('ascii', 'ignore') for datum in row]
@@ -97,10 +166,9 @@ class HometeachingScraper:
         pass_word_field.clear()
         pass_word_field.send_keys(self.pass_word)
         submit_btn.click()
-        self.wait = WebDriverWait(self.driver, 100)
 
-
-    def write_row(self, row):
+    def write_row(self, writer, csv_file, row):
         row = self.asciify(row)
-        self.writer.writerow(row)
-        self.csv_file.flush
+        # print(''.join(row))
+        writer.writerow(row)
+        csv_file.flush()

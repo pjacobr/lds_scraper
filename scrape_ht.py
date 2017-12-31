@@ -1,14 +1,12 @@
-import datetime as dt
+
 from lds_scraper import HometeachingScraper as hs
-cur_date = str(dt.datetime.now().month) + '-' + str(dt.datetime.now().year)
+
 spec = {
         'username': 'jacobp1794',
         'password': 'twinsrock1',
-        'csv_folder': '',
-        'month-year': cur_date
     }
 
-scraper = hs(spec['username'], spec['password'], current_month=spec['month-year'])
+scraper = hs(spec['username'], spec['password'])
 
 print('Starting browser...')
 scraper.open_browser()
@@ -21,7 +19,7 @@ scraper.scrape()
 #get the number of districts
 print(scraper.districts)
 print('data')
-scraper.print_data()
+scraper.districts_all_to_csv()
 
 # //*[@id="companionship-list"]/div[2]/div[1]/ul/li[2]/a
 # #scraper.close()

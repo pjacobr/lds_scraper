@@ -28,6 +28,9 @@ class Hometeacher:
     def to_string(self):
         return self.first_name + ' ' + self.last_name + '\n'
 
+    def get_name(self):
+        return self.first_name + ' ' + self.last_name
+
 class Hometeachee:
     def __init__(self, first_name, last_name):
         self.first_name = first_name
@@ -35,6 +38,9 @@ class Hometeachee:
 
     def to_string(self):
         return '\t' + self.first_name + ' ' + self.last_name + '\n'
+
+    def get_name(self):
+        return self.first_name + ' ' + self.last_name
 
 class Companionship:
     def __init__(self, companions=None, hometeachees=None):

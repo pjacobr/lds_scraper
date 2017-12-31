@@ -28,7 +28,7 @@ class DistrictLocators:
     # //*[@id="companionship-list"]/div[2]/div[3]/div[5]/div[1]/a
     # //*[@id="companionship-list"]/div[2]/div[3]/div[4]/div[1]/a
     MONTHS = (By.PARTIAL_LINK_TEXT, 'View All Orders:')
-    TAUGHT = (By.XPATH, '//*[@id="companionship-list"]/div[2]/div[3]/div[3]/div[2]/div[1]/div/span[11]/span'
+    TAUGHT = (By.XPATH, '//*[@id="companionship-list"]/div[2]/div[3]/div[3]/div[2]/div[1]/div/span[11]/span')
 
     # def get_invoice_link(self, which):
     #     return (By.XPATH, '//*[@id="ordersContainer"]/div[' + str(which + 1) + ']/div[1]/div/div/div/div[2]/div[2]/ul/a[2]')
