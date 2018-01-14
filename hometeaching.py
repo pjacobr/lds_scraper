@@ -1,5 +1,3 @@
-
-
 class District:
     def __init__(self, district_leader, companionships=None, number_of_companionships=0):
         self.district_leader = district_leader
@@ -20,6 +18,7 @@ class District:
             return_string += comp.to_string()
         return return_string
 
+
 class Hometeacher:
     def __init__(self, first_name, last_name):
         self.first_name = first_name
@@ -31,16 +30,21 @@ class Hometeacher:
     def get_name(self):
         return self.first_name + ' ' + self.last_name
 
+
 class Hometeachee:
     def __init__(self, first_name, last_name):
         self.first_name = first_name
         self.last_name = last_name
+        from lds_scraper import HometeachingScraper as hs
+        months = hs.months
+        self.hometeaching = {months[i][1]: 0 for i in range(1, 13)}
 
     def to_string(self):
         return '\t' + self.first_name + ' ' + self.last_name + '\n'
 
     def get_name(self):
         return self.first_name + ' ' + self.last_name
+
 
 class Companionship:
     def __init__(self, companions=None, hometeachees=None):

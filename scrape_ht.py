@@ -1,10 +1,9 @@
-
 from lds_scraper import HometeachingScraper as hs
 
 spec = {
-        'username': 'jacobp1794',
-        'password': 'twinsrock1',
-    }
+    'username': '*************',
+    'password': '*************',
+}
 
 scraper = hs(spec['username'], spec['password'])
 
@@ -16,11 +15,13 @@ scraper.sign_in()
 
 print('Beginning scrape...')
 scraper.scrape()
-#get the number of districts
+
+# get the number of districts
 print(scraper.districts)
 print('data')
-scraper.districts_all_to_csv()
-
+#scraper.by_district_to_csv()
+#scraper.companionships_to_csv()
+scraper.csv_database_format()
 # //*[@id="companionship-list"]/div[2]/div[1]/ul/li[2]/a
 # #scraper.close()
 # //*[@id="companionship-list"]/div[2]
