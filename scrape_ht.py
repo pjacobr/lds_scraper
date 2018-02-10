@@ -1,6 +1,6 @@
 from lds_scraper import HometeachingScraper as hs
-username = str(input("what is your username?"))
-password = str(input("What is your password?"))
+#username = str(input("what is your username?"))
+#password = str(input("What is your password?"))
 spec = {
     'username': username,
     'password': password,
