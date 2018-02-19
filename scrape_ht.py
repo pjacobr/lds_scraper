@@ -1,13 +1,9 @@
 from lds_scraper import HometeachingScraper as hs
-# username = str(input("what is your username?"))
-# password = str(input("What is your password?"))
-# spec = {
-#     'username': username,
-#     'password': password,
-# }
+username = str(input("what is your username?"))
+password = str(input("What is your password?"))
 spec = {
-    'username': 'jacobp1794',
-    'password': 'twinsrock1'
+    'username': username,
+    'password': password,
 }
 
 scraper = hs(spec['username'], spec['password'])
