@@ -1,12 +1,13 @@
 from lds_scraper import HometeachingScraper as hs
-#username = str(input("what is your username?"))
-#password = str(input("What is your password?"))
-spec = {
-    'username': username,
-    'password': password,
-}
-
-scraper = hs(spec['username'], spec['password'])
+import getpass as gp
+username = raw_input("Username: ")
+password = gp.getpass("Password: ")
+# spec = {
+#     'username': username,
+#     'password': password,
+# }
+scraper = hs(username, password)
+# scraper = hs(spec['username'], spec['password'])
 
 print('Starting browser...')
 scraper.open_browser()
