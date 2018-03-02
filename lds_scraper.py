@@ -1,4 +1,5 @@
 ########################SELENIUM##################################################
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,6 +13,10 @@ import datetime as dt
 import unicodedata
 import platform
 import csv
+
+from datetime import datetime
+
+current_month = datetime.now().month
 
 
 class HometeachingScraper:
@@ -63,8 +68,7 @@ class HometeachingScraper:
 
     def scrape(self, get_all=False):
         try:
-            element = WebDriverWait(self.driver, 100).until(
-                EC.presence_of_element_located(DL.DISTRICTS))
+            WebDriverWait(self.driver, 100).until(EC.presence_of_element_located(DL.DISTRICTS))
         finally:
             pass
 
@@ -76,42 +80,69 @@ class HometeachingScraper:
             district_leader = self.driver.find_element(
                 *(By.XPATH, '//*[@id="organizeList"]/accordion/div/div[' + str(i) + ']/div[2]/div/div[1]/a')).text
             self.districts.append(District(district_leader=district_leader))
+
         # Look for the companionships within the district and add all that information to the district
         for i in range(len(districts_len)):
             companionships = districts_len[i].find_elements(*DL.COMPANIONSHIP)
             companionships = companionships[1:]
+            res = []
             for companionship in companionships:
-                # extract the text from the web find_element
-                # TODO: This is where I am going to want to pull out the hometaught data.
-                companionship = companionship.text.split('\n')[:-1]
-                # print(companionship)
-                comp_names = companionship[0].split(' ')
-                # get the comp info
-                comp = Companionship()
-                # Add the hometeaching companionship
-                for k in range(0, len(comp_names), 2):
-                    # take off the trailing comma
-                    comp_names[k] = comp_names[k][:-1]
-                    f_name = comp_names[k + 1]
-                    l_name = comp_names[k]
-                    hometeacher = Hometeacher(f_name, l_name)
-                    comp.companions.append(hometeacher)
-                # Add the hometeachees
-                for k in range(1, len(companionship)):
-                    names = companionship[k].split(',')
-                    l_name = names[0]
-                    f_name = names[1]
-                    comp.hometeachees.append(Hometeachee(f_name, l_name))
-                # Add the companionship to the district
-                self.districts[i].add_companionship(comp)
+                # elem = companionship.find_element(By.CSS_SELECTOR, '.teacher-list')
+                values = {}
 
-            hometeachee_data_temp = districts_len[i].find_elements(*DL.HOMETEACHEE_DATA)
-            hometeachee_data = []
-            for hometeachee in hometeachee_data_temp:
-                if hometeachee.text is not u'':
-                    hometeachee_data.append(hometeachee)
-                    
+                soup = BeautifulSoup(companionship.get_attribute('outerHTML'), 'lxml')
+                teachers = soup.find('div', {'class': 'teacher-list'})
+                teachers = teachers.find_all('li')
+                teacher1 = teachers[0].text.replace('\n', '').strip()
+                teacher2 = teachers[1].text.replace('\n', '').strip()
+                values['comp1'] = teacher1
+                values['comp2'] = teacher2
+                values['teachees'] = []
 
+                assignments = soup.find_all('div', {'ng-repeat': 'assignment in comp.assignments'})
+                for assignment in assignments:
+                    teachee = assignment.find('div', {'class': 'assignment-name'}).text.replace('\n', '').strip()
+                    obj = {'name': teachee}
+                    visits_cont = assignment.find('div', {'class': 'visit-cb-group'})
+                    checkboxes = visits_cont.find_all('span', {'class': 'visit-cb'})
+                    vals = {}
+                    vals[self.get_month(-2)] = self.get_checked(checkboxes[0])
+                    vals[self.get_month(-1)] = self.get_checked(checkboxes[1])
+                    vals[self.get_month(0)] = self.get_checked(checkboxes[2])
+                    obj['past3months'] = vals
+                    values['teachees'].append(obj)
+                res.append(values)
+            print(res)
+            print('\n\n')
+
+            # hometeachee_data_temp = districts_len[i].find_elements(*DL.HOMETEACHEE_DATA)
+            # hometeachee_data = []
+            # for hometeachee in hometeachee_data_temp:
+            #     if hometeachee.text is not u'':
+            #         hometeachee_data.append(hometeachee)
+
+    @staticmethod
+    def get_month(dis):
+        if current_month + dis <= 0:
+            return current_month + dis % 12
+        else:
+            return current_month + dis
+
+    @staticmethod
+    def get_checked(cb):
+        item = cb.find('span', 'visit-icon')
+        classes = item.get('class')
+
+        if 'icon-check-active' in classes:
+            return 'visited'
+        elif 'icon-close' in classes:
+            return 'not visited'
+        elif 'icon-open' in classes:
+            return 'UNKNOWN'
+        else:
+            print('AWWAWUHEUHAEUHWAUHWAUAWHUAWAWAWAW UNKNOWN ERROR')
+            # then they've been visited
+            # print(f'>>>> {item.get("class")}\n\n')
 
     def print_data(self):
         for district in self.districts:
@@ -176,7 +207,6 @@ class HometeachingScraper:
             'Complete 4',
             'Complete 5',
 
-
         ]
 
         with open(self.csv_folder + self.get_csv_name('csv_database'), 'wb') as csv_file:
@@ -198,10 +228,6 @@ class HometeachingScraper:
                         else:
                             comp_data.append('')
                     self.write_row(writer, csv_file, comp_data)
-
-
-
-
 
     def asciify(self, row):
         try:
